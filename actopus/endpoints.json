@@ -1,0 +1,44 @@
+{
+  "endpoints": [
+    {
+      "type": "releases",
+      "actions": [
+        {
+          "list": {
+            "endpoint": "/projects/{}/releases",
+            "method": "GET"
+          }
+        },
+        {
+          "get": {
+            "endpoint": "/projects/{}/releases/{}",
+            "method": "GET"
+          }
+        },
+        {
+          "create": {
+            "endpoint": "/releases",
+            "method": "POST",
+            "body": {
+              "ChannelId": "{channelid}",
+              "ProjectId": "{projectid}",
+              "SelectedPackages": [],
+              "Version": "{release_version}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "projects",
+      "actions": [
+        {
+          "list": {
+            "endpoint": "/projects/all",
+            "method": "GET"
+          }
+        }
+      ]
+    }
+  ]
+}
