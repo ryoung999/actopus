@@ -3,9 +3,9 @@
 
 from docopt import docopt
 import requests
+import json
 from sys import exit
 from http import HTTPStatus
-from .endpoints import Endpoints
 
 
 class ResourceNotFoundError(Exception):
@@ -56,6 +56,18 @@ class UnexpectedResponseError(Exception):
         return repr(self.message)
 
 
+class EndpointDataError(Exception):
+    """Exception raised when requested endpoint data does not exist."""
+
+    def __init__(self, message):
+        """Initialize class."""
+        self.message = message
+
+    def __str__(self):
+        """String representation."""
+        return repr(self.message)
+
+
 class Actopus():
     """
 actopus.
@@ -80,44 +92,72 @@ Options:
         self.octo_host = octo_host
         self.api_key = api_key
         self.base_url = "https://{}/api".format(self.octo_host)
-        self.endpoints = Endpoints()
 
-    def find_projectid_byname(self, proj_name):
+        with open('actopus/endpoints.json', 'r') as ep:
+            endpoints = json.load(ep)
+        self.endpoints = endpoints['endpoints']
+
+    def get_endpoint_def(self, etype, action):
+        """Return endpoint details.
+
+        etype(str):  type of endpoint (projects, releases, etc)
+        action(str): action (list, get, etc)
+        """
+
+        t = None
+        for item in self.endpoints:
+            if item['type'] == etype:
+                t = item
+        if not t:
+            raise EndpointDataError('Could not find type {}'.format(etype))
+
+        a = None
+        for item in t['actions']:
+            if item['action'] == action:
+                a = item
+        if not a:
+            raise EndpointDataError('Could not find type {}'.format(action))
+
+        return a
+
+    def find_projectid_byname(self, name):
         """Find a Project ID by project name.
         
-        proj_name(str): name of project.
+        name(str): name of project.
 
         Returns project id, or None if no project found.
         """
-        method = self.endpoints.projects.list.method
-        endpoint = self.endpoints.projects.list.endpoint_url
+        epdef = self.get_endpoint_def('projects', 'list')
+        method = epdef['method']
+        endpoint = epdef['endpoint']
         projects = self.send_request(method, endpoint)
         all_projects = projects.json()
 
         for project in all_projects:
-            if project['Name'] == proj_name:
+            if project['Name'] == name:
                 return project['Id']
 
         return None
 
-    def release_exists(self, proj_name, release_version):
+    def release_exists(self, name, release):
         """Find out if a release already exists.
         
-        proj_name(str):       name of project.
-        release_version(str): version number of release.
+        name(str):     name of project.
+        release(str):  version number of release.
         
         Throws exceptions for unexpected response from Octopus.
         Otherwise returns boolean.
         """
-        proj_id = self.find_projectid_byname(proj_name)
+        proj_id = self.find_projectid_byname(name)
         if not proj_id:
             raise ResourceNotFoundError('no project id found for {}'.format(
-                proj_name))
+                name))
 
-        self.endpoints.proj_id = proj_id
-        self.endpoints.release_version = release_version
-        method=self.endpoints.releases.get.method
-        endpoint = self.endpoints.releases.get.endpoint_url
+        epdef = self.get_endpoint_def('releases', 'get')
+        method=epdef['method']
+        ep = epdef['endpoint']
+
+        endpoint = ep.format(id=proj_id, version=release)
         response = self.send_request(method, endpoint)
 
         if response.status_code == HTTPStatus.NOT_FOUND:
@@ -128,35 +168,35 @@ Options:
             raise UnexpectedResponseError('got bad response code {}: {}'.format(
                 response.status_code, response.text))
 
-    def create_release(self, proj_name, release_version):
+    def create_release(self, name, release):
         """Create a release.
 
-        proj_name(str):       name of project.
-        release_version(str): version number of release.
+        name(str):       name of project.
+        release(str): version number of release.
 
         If the release already exists, throws exception.
         If project name is not found, throws exception.
         Otherwise, returns json response from Octopus.
         """
-        if self.release_exists(proj_name, release_version):
+        if self.release_exists(name, release):
             raise ResourceAlreadyExistsError(
-                'release already exists for version {}'.format(release_version))
+                'release already exists for version {}'.format(release))
 
-        proj_id = self.find_projectid_byname(proj_name)
+        proj_id = self.find_projectid_byname(name)
         if not proj_id:
             raise ResourceNotFoundError('no project id found for {}'.format(
-                proj_name))
+                name))
 
-        self.endpoints.proj_id = proj_id
-        self.endpoints.release_version = release_version
-        method = self.endpoints.releases.create.method
-        endpoint = self.endpoints.releases.create.endpoint_url
+        epdef = self.get_endpoint_def('releases', 'create')
+        method = epdef['method']
+        endpoint = epdef['endpoint']
+        body = epdef['body']
+
         selected_packages = {"ActionName": "deploy_package",
-                             "Version": release_version}
-        body = self.endpoints.releases.create.body
+                             "Version": release}
         body['ProjectId'] = proj_id
         body['ChannelId'] = 'Channels-{}'.format(proj_id.split('-')[1])
-        body['Version'] = release_version
+        body['Version'] = release
         body['SelectedPackages'].append(selected_packages)
 
         response = self.send_request(method, endpoint, body)
