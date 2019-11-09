@@ -1,44 +1,40 @@
 {
-  "endpoints": [
-    {
-      "type": "releases",
-      "actions": [
+    "endpoints": [
         {
-          "list": {
-            "endpoint": "/projects/{}/releases",
-            "method": "GET"
-          }
+            "type": "releases",
+            "actions": [
+                {
+                    "action": "list",
+                    "endpoint": "/projects/{id}/releases",
+                    "method": "GET"
+                },
+                {
+                    "action": "get",
+                    "endpoint": "/projects/{id}/releases/{version}",
+                    "method": "GET"
+                },
+                {
+                    "action": "create",
+                    "endpoint": "/releases",
+                    "method": "POST",
+                    "body": {
+                        "ChannelId": "",
+                        "ProjectId": "",
+                        "SelectedPackages": [],
+                        "Version": ""
+                    }
+                }
+            ]
         },
         {
-          "get": {
-            "endpoint": "/projects/{}/releases/{}",
-            "method": "GET"
-          }
-        },
-        {
-          "create": {
-            "endpoint": "/releases",
-            "method": "POST",
-            "body": {
-              "ChannelId": "{channelid}",
-              "ProjectId": "{projectid}",
-              "SelectedPackages": [],
-              "Version": "{release_version}"
-            }
-          }
+            "type": "projects",
+            "actions": [
+                {
+                    "action": "list",
+                    "endpoint": "/projects/all",
+                    "method": "GET"
+                }
+            ]
         }
-      ]
-    },
-    {
-      "type": "projects",
-      "actions": [
-        {
-          "list": {
-            "endpoint": "/projects/all",
-            "method": "GET"
-          }
-        }
-      ]
-    }
-  ]
+    ]
 }
