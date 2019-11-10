@@ -7,7 +7,7 @@ from unittest import mock
 from unittest.mock import MagicMock
 from http import HTTPStatus
 from actopus.actopus import (Actopus, ResourceCreationError, ResourceNotFoundError,
-                             ResourceAlreadyExistsError)
+                             ResourceAlreadyExistsError, EndpointDataError)
 from .mocks import all_projects, created_success
 from requests.exceptions import ConnectionError
 
@@ -20,6 +20,25 @@ class TestActopus(unittest.TestCase):
 
     def tearUp(self):
         pass
+
+    def test_get_endpoint_def_returns_endpoint_defs(self):
+        """get_endpoint_def should return endpoint details."""
+        ap = Actopus('myserver.mycomp.com', 'anapikey')
+        epdef = ap.get_endpoint_def('projects', 'list')
+        expected = {'action': 'list', 'endpoint': '/projects/all', 'method': 'GET'}
+        self.assertEqual(epdef, expected)
+
+    def test_get_endpoint_def_nonexisting_type(self):
+        """get_endpoint_def should raise exception for nonexisting type."""
+        ap = Actopus('myserver.mycomp.com', 'anapikey')
+        with self.assertRaises(EndpointDataError) as cx:
+            epdef = ap.get_endpoint_def('notatype', 'notanaction')
+
+    def test_get_endpoint_def_nonexisting_action(self):
+        """get_endpoint_def should raise exception for nonexisting action."""
+        ap = Actopus('myserver.mycomp.com', 'anapikey')
+        with self.assertRaises(EndpointDataError) as cx:
+            epdef = ap.get_endpoint_def('projects', 'notanaction')
 
     @mock.patch('actopus.actopus.Actopus.send_request')
     @mock.patch('actopus.actopus.Actopus.find_projectid_byname')
@@ -124,4 +143,3 @@ class TestActopus(unittest.TestCase):
         mock_release_exists.return_value = False
         with self.assertRaises(ResourceCreationError) as cx:
             ap.create_release('myproject', '1.2.3')
-
