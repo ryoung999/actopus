@@ -33,6 +33,56 @@
                     "action": "list",
                     "endpoint": "/projects/all",
                     "method": "GET"
+                },
+                {
+                    "action": "get",
+                    "endpoint": "/projects/{id}",
+                    "method": "GET"
+                }
+            ]
+        },
+        {
+            "type": "packages",
+            "actions": [
+                {
+                    "action": "list",
+                    "endpoint": "/packages",
+                    "method": "GET"
+                },
+                {
+                    "action": "get",
+                    "endpoint": "/packages/{id}",
+                    "method": "GET"
+                }
+            ]
+        },
+        {
+            "type": "machines",
+            "actions": [
+                {
+                    "action": "list",
+                    "endpoint": "/machines/all",
+                    "method": "GET"
+                },
+                {
+                    "action": "get",
+                    "endpoint": "/machines/{id}",
+                    "method": "GET"
+                }
+            ]
+        },
+        {
+            "type": "deployments",
+            "actions": [
+                {
+                    "action": "list",
+                    "endpoint": "/deployments",
+                    "method": "GET"
+                },
+                {
+                    "action": "get",
+                    "endpoint": "/deployments/{id}",
+                    "method": "GET"
                 }
             ]
         }
